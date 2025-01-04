@@ -1,0 +1,5 @@
+SELECT s.class
+FROM score AS sc
+JOIN class AS s ON sc.name = s.name
+ORDER BY sc.score DESC
+LIMIT 1 OFFSET 1;

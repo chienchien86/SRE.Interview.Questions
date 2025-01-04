@@ -1,0 +1,4 @@
+## Basic MySQL Configuration 
+mysqlRootPassword: "your-root-password"
+mysqlDatabase: "mydb3"
+
