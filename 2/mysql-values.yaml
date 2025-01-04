@@ -1,4 +1,139 @@
 ## Basic MySQL Configuration 
-mysqlRootPassword: "your-root-password"
-mysqlDatabase: "mydb3"
+architecture: replication
 
+auth:
+  rootPassword: ""
+  createDatabase: true
+  database: ""
+  username: ""
+  password: ""
+  replicationUser: ""
+  replicationPassword: ""
+
+
+primary:
+  name: primary
+  resourcesPreset: "large"
+
+  configuration: |-
+    [mysqld]
+    authentication_policy='{{- .Values.auth.authenticationPolicy | default "* ,," }}'
+    skip-name-resolve
+    explicit_defaults_for_timestamp
+    basedir=/opt/bitnami/mysql
+    plugin_dir=/opt/bitnami/mysql/lib/plugin
+    port={{ .Values.primary.containerPorts.mysql }}
+    mysqlx={{ ternary 1 0 .Values.primary.enableMySQLX }}
+    mysqlx_port={{ .Values.primary.containerPorts.mysqlx }}
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    datadir=/bitnami/mysql/data
+    tmpdir=/opt/bitnami/mysql/tmp
+    max_allowed_packet=16M
+    bind-address=*
+    pid-file=/opt/bitnami/mysql/tmp/mysqld.pid
+    log-error=/opt/bitnami/mysql/logs/mysqld.log
+    character-set-server=UTF8
+    slow_query_log=0
+    long_query_time=10.0
+    binlog_expire_logs_seconds=3600
+    binlog_expire_logs_auto_purge=ON
+    tmp_table_size=64M
+    max_heap_table_size=64M
+    innodb_buffer_pool_size=2G
+    innodb_log_buffer_size=64M
+
+    [client]
+    port={{ .Values.primary.containerPorts.mysql }}
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    default-character-set=UTF8
+    plugin_dir=/opt/bitnami/mysql/lib/plugin
+
+    [manager]
+    port={{ .Values.primary.containerPorts.mysql }}
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    pid-file=/opt/bitnami/mysql/tmp/mysqld.pid
+
+  service:
+    type: ClusterIP
+    port: 3306
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - XX
+
+  persistence:
+    enabled: true
+    existingClaim: mysql-monitoring-primary
+    size: 10Gi
+
+secondary:
+  name: secondary
+  replicaCount: 1
+  resourcesPreset: "large"
+
+  configuration: |-
+    [mysqld]
+    authentication_policy='{{- .Values.auth.authenticationPolicy | default "* ,," }}'
+    skip-name-resolve
+    explicit_defaults_for_timestamp
+    basedir=/opt/bitnami/mysql
+    plugin_dir=/opt/bitnami/mysql/lib/plugin
+    port={{ .Values.secondary.containerPorts.mysql }}
+    mysqlx={{ ternary 1 0 .Values.secondary.enableMySQLX }}
+    mysqlx_port={{ .Values.secondary.containerPorts.mysqlx }}
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    datadir=/bitnami/mysql/data
+    tmpdir=/opt/bitnami/mysql/tmp
+    max_allowed_packet=16M
+    bind-address=*
+    pid-file=/opt/bitnami/mysql/tmp/mysqld.pid
+    log-error=/opt/bitnami/mysql/logs/mysqld.log
+    character-set-server=UTF8
+    slow_query_log=0
+    long_query_time=10.0
+    binlog_expire_logs_seconds=3600
+    binlog_expire_logs_auto_purge=ON
+    tmp_table_size=64M
+    max_heap_table_size=64M
+    innodb_buffer_pool_size=2G
+    innodb_log_buffer_size=64M
+
+    [client]
+    port={{ .Values.secondary.containerPorts.mysql }}
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    default-character-set=UTF8
+    plugin_dir=/opt/bitnami/mysql/lib/plugin
+
+    [manager]
+    port={{ .Values.secondary.containerPorts.mysql }}
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    pid-file=/opt/bitnami/mysql/tmp/mysqld.pid
+
+  service:
+    type: ClusterIP
+    port: 3306
+
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - XX
+
+  persistence:
+    enabled: true
+    existingClaim: mysql-monitoring-secondary
+    size: 10Gi
+
+metrics:
+  enabled: false
